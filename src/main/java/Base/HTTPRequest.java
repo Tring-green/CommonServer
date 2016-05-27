@@ -38,11 +38,6 @@ public class HTTPRequest {
             BufferedReader br = StreamUtils.createBufferedReader(in, "US-ASCII");
             String requestLine;
             List<String> requestHeader = new ArrayList<>();
-            int len;
-            long startTime = System.currentTimeMillis();
-            // while ((len = in.read()) != -1) {
-            //     System.out.print((char)len);
-            // }
             while (true) {
                 requestLine = br.readLine();
                 if (requestLine.length() != 0) {
@@ -57,14 +52,14 @@ public class HTTPRequest {
             mMethod = tokens[0];
             mFileName = tokens[1];
             mVersion = tokens[2];
-            logger.info("request header:\r\n" + mMethod + " " + mFileName + " " + mVersion);
+            // logger.info("request header:\r\n" + mMethod + " " + mFileName + " " + mVersion);
             logger.info(connection.getRemoteSocketAddress() + " " + mMethod);
             for (int i = 1; i < requestHeader.size(); i++) {
                 String line = requestHeader.get(i);
                 String[] split = line.split(":");
                 String[] strings = split[1].split(";");
                 content.put(split[0].trim(), strings);
-                logger.info(split[0].trim() + " " + strings[0]);
+                // logger.info(split[0].trim() + " " + strings[0]);
             }
 
 

@@ -45,6 +45,8 @@ public class ChatServer {
 	public static void main(String[] args) {
 
 		File docroot = new File("test/");
+		if(!docroot.exists())
+			docroot.mkdirs();
 		System.out.println(docroot.getAbsolutePath());
 		int port = 8000;
 

@@ -1,7 +1,10 @@
 package Base;
 
 import DB.DBHelper;
+import Domain.HTTPError;
+import Domain.HttpRegister;
 import Utils.SHAUtil;
+import com.google.gson.Gson;
 
 import java.io.*;
 import java.net.Socket;
@@ -42,7 +45,8 @@ public class HTTPResponse {
             String[] contentTypes = request.getContenttype();
             if (contentTypes == null) {
                 try {
-                    sendHeader("text/html", "register success.", 0);
+                    sendHeader("text/html");
+                    sendError("format error", 100);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -52,11 +56,15 @@ public class HTTPResponse {
                 if (contentType.contains("application/x-www-form-urlencoded")) {
                     if (request.getFileName().equals("/register")) {
                         try {
-                            sendHeader("text/html", "register success.", 0);
                             register(request);
                             return;
                         } catch (IOException e) {
-                            logger.log(Level.SEVERE, "Register Error!", e);
+                            try {
+                                sendHeader("text/html");
+                                logger.log(Level.SEVERE, "Register Error!", e);
+                            } catch (IOException e1) {
+                                e1.printStackTrace();
+                            }
                         }
                     }
                 }
@@ -67,29 +75,45 @@ public class HTTPResponse {
     public void register(HTTPRequest request) throws IOException {
         String string = request.getRequestbody();
         String[] split = string.split("&");
-        String userId = URLDecoder.decode(split[0].split("=")[1], "utf-8");
+        String[] s1 = split[0].split("=");
+        String[] s2 = split[1].split("=");
+        String userId = null, passwd = null;
+        if (s1[0].equals("userId")) {
+            userId = URLDecoder.decode(s1[1], "utf-8");
+            passwd = URLDecoder.decode(s2[1], "utf-8");
+        } else {
+            userId = URLDecoder.decode(s2[1], "utf-8");
+            passwd = URLDecoder.decode(s1[1], "utf-8");
+        }
         String sql = "select userId from account";//SQL语句
         DBHelper db = new DBHelper(sql);//创建DBHelper对象
         DBHelper insert = null;
         ResultSet ret = null;
         try {
             ret = db.pst.executeQuery();//执行语句，得到结果集
-            while (ret.next()) {
-                String uid = ret.getString(1);
-                if (uid.equals(userId)) {
-                    sendError("The userId has already existed.Register error happens.", 150);
-                    return;
+            if (ret != null) {
+                while (ret.next()) {
+                    String uid = ret.getString(1);
+                    if (uid.equals(userId)) {
+                        sendHeader("text/html");
+                        sendError("The userId has already existed.Register error happens.", 150);
+                        return;
+                    }
                 }
             }
-            String passwd = URLDecoder.decode(split[1].split("=")[1], "utf-8");
             insert = new DBHelper("insert into account (userId, passwd) values(?, ?) ");
             insert.pst.setString(1, userId);
-            insert.pst.setString(2, SHAUtil.shaEncode(passwd));
-            insert.pst.executeUpdate();
+            insert.pst.setString(2, SHAUtil.shaEncode(passwd));insert.pst.executeUpdate();
+            sendHeader("text/html");
             sendRegisterSuccess(userId, passwd);
+            logger.log(Level.INFO, "register success!");
         } catch (SQLException e) {
+            sendHeader("text/html");
+            sendError("sql error!", 151);
             logger.log(Level.SEVERE, "sql error!", e);
         } catch (Exception e) {
+            sendHeader("text/html");
+            sendError("encoding error!", 152);
             logger.log(Level.SEVERE, "encoding error!", e);
             e.printStackTrace();
         } finally {
@@ -101,21 +125,19 @@ public class HTTPResponse {
     }
 
     private void sendRegisterSuccess(String userId, String passwd) throws IOException {
-        // JSONObject jsonObject = new JSONObject();
-        // jsonObject.put("flag", true);
-        // Map<String, String> datas = new HashMap<>();
-        // datas.put("userId", userId);
-        // datas.put("passwd", passwd);
-        // jsonObject.put("data", datas);
-        // String json = jsonObject.toString();
-        // writer.write("Content-length: " + json.length() + "\r\n\r\n");
-        // writer.write(json);
-        // writer.flush();
-        // writer.close();
+        Gson gson = new Gson();
+        HttpRegister register = new HttpRegister();
+        register.setFlag(true);
+        register.setData(new HttpRegister.datas(userId, passwd));
+        String json = gson.toJson(register);
+        writer.write("Content-length: " + json.length() + "\r\n\r\n");
+        writer.write(json);
+        writer.flush();
+        writer.close();
     }
 
 
-    private void sendHeader(String contentType, String message, int length) throws IOException {
+    private void sendHeader(String contentType) throws IOException {
         writer.write("HTTP/1.1 200 OK" + "\r\n");
         Date now = new Date();
         writer.write("Date: " + now + "\r\n");
@@ -125,14 +147,12 @@ public class HTTPResponse {
     }
 
     private void sendError(String errorMessage, int errorCode) throws IOException {
-        // JSONObject jsonObject = new JSONObject();
-        // jsonObject.put("flag", false);
-        // jsonObject.put("errorCode", errorCode);
-        // jsonObject.put("errorString", errorMessage);
-        // String json = jsonObject.toString();
-        // writer.write("Content-length: " + json.length() + "\r\n\r\n");
-        // writer.write(json);
-        // writer.flush();
-        // writer.close();
+        HTTPError error = new HTTPError(errorCode, errorMessage);
+        Gson gson = new Gson();
+        String json = gson.toJson(error);
+        writer.write("Content-length: " + json.length() + "\r\n\r\n");
+        writer.write(json);
+        writer.flush();
+        writer.close();
     }
 }
