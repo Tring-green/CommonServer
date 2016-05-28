@@ -52,14 +52,12 @@ public class HTTPRequest {
             mMethod = tokens[0];
             mFileName = tokens[1];
             mVersion = tokens[2];
-            // logger.info("request header:\r\n" + mMethod + " " + mFileName + " " + mVersion);
             logger.info(connection.getRemoteSocketAddress() + " " + mMethod);
             for (int i = 1; i < requestHeader.size(); i++) {
                 String line = requestHeader.get(i);
-                String[] split = line.split(":");
+                String[] split = line.split(": ");
                 String[] strings = split[1].split(";");
                 content.put(split[0].trim(), strings);
-                // logger.info(split[0].trim() + " " + strings[0]);
             }
 
 
@@ -92,5 +90,16 @@ public class HTTPRequest {
         return content.get("Content-Type");
     }
 
+    public Map<String, String[]> getContent() {
+        return content;
+    }
 
+    public boolean containsInContentType(String key) {
+        String[] strings = content.get("Content-Type");
+        for (String string : strings) {
+            if(string.toUpperCase().contains(key.toUpperCase()))
+                return true;
+        }
+        return false;
+    }
 }

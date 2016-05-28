@@ -4,15 +4,14 @@ package Utils;
  * Created by admin on 2016/5/28.
  */
 public class StringUtils {
-    private final String mString;
-    public StringUtils(String string) {
-        mString = string;
+    public static boolean isEmpty(String str) {
+        return str == null || str.length() == 0 ? true : false;
     }
-    public int getCharNum(char c) {
-        int num = 0;
-        for (int i =0;i<mString.length();i++) {
-            num = mString.charAt(i) == c ? ++num : num;
+
+    public static String replaceOneyByOne(String target, String[] replacement, String c) {
+        for (int i =0;i<replacement.length;i++) {
+            target = target.replaceFirst(c, replacement[i] + "=");
         }
-        return num;
+        return target;
     }
 }

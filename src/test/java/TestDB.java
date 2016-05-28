@@ -1,5 +1,6 @@
 import DB.DBHelper;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
@@ -7,18 +8,24 @@ import java.sql.SQLException;
  */
 public class TestDB {
     public static void main(String[] args) throws SQLException {
-        DBHelper insert = new DBHelper("insert into Account (userId, passwd, token) values(?, ?, ?) ");
-        insert.pst.setString(1, "abc");
-        insert.pst.setString(2, "cde");
-        insert.pst.setString(3, "efc");
-        insert.pst.executeUpdate();
+        try {
+            DBHelper.getInstance().insert("insert into Account (userId, passwd, token) values(?, ?, ?)",
+                    new String[]{"abc", "def", "ggg"});
 
-        insert.pst = insert.conn.prepareStatement("insert into Account (userId, passwd, token) values(?, ?, ?) ");
-        insert.pst.setString(1, "abcd");
-        insert.pst.setString(2, "cded");
-        insert.pst.setString(3, "efcd");
-        insert.pst.executeUpdate();
-        if (insert != null)
-            insert.close();
+            DBHelper.getInstance().insert("insert into Account (userId, passwd, token) values(?, ?, ?)",
+                    new String[]{"asdfa", "asdfasd", "asdf"});
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        ResultSet ret = null;
+        ret = DBHelper.getInstance().query("select * from account");//执行语句，得到结果集
+        if (ret != null) {
+            while (ret.next()) {
+                String uid = ret.getString(1);
+                System.out.println(uid);
+            }
+        }
+        DBHelper.close();
+
     }
 }

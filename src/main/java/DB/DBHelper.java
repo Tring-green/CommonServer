@@ -1,11 +1,6 @@
 package DB;
 
-import Utils.StringUtils;
-
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -44,32 +39,48 @@ public class DBHelper {
         return instance;
     }
 
-    public DBHelper(String sql) {
-        try {
-            Class.forName(name);//指定连接类型
-            conn = DriverManager.getConnection(url, user, password);//获取连接
-            pst = conn.prepareStatement(sql);//准备执行语句
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    public String findAccoun() {
+        return null;
     }
 
-    public PreparedStatement insert(String sql, String[] values) throws SQLException {
-        this.pst = conn.prepareStatement(sql);
-        int num = new StringUtils(sql).getCharNum('?');
-        for (int i = 1; i <= num; i++) {
-            this.pst.setString(i, values[i]);
+    public DBHelper insert(String sql, String[] values) throws SQLException {
+        pst = conn.prepareStatement(sql);
+        for (int i = 1; i <= values.length; i++) {
+            pst.setString(i, values[i - 1]);
         }
         pst.executeUpdate();
-        return pst;
+        return this;
     }
 
-    public void close() {
+    public ResultSet query(String sql) throws SQLException {
+        pst = conn.prepareStatement(sql);
+        return pst.executeQuery();
+    }
+
+    public ResultSet query(String sql, String[] values) throws SQLException {
+        pst = conn.prepareStatement(sql);
+        for (int i = 1; i <= values.length; i++) {
+            pst.setString(i, values[i - 1]);
+        }
+        return pst.executeQuery();
+    }
+
+    public int update(String sql, String[] newValue) throws SQLException {
+        pst = conn.prepareStatement(sql);
+        int i;
+        for (i = 1; i <= newValue.length; i++) {
+            pst.setString(i, newValue[i - 1]);
+        }
+        return pst.executeUpdate();
+    }
+
+
+    public static void close() {
         try {
-            if (this.conn != null)
-                this.conn.close();
-            if (this.pst != null)
-                this.pst.close();
+            if (instance.conn != null)
+                instance.conn.close();
+            if (instance.pst != null)
+                instance.pst.close();
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "database close error.", e);
         }
