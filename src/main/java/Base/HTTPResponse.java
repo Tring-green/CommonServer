@@ -1,14 +1,15 @@
 package Base;
 
 import DB.DBHelper;
+import Domain.Account;
 import Domain.HTTPError;
-import Domain.HttpRegister;
 import Utils.SHAUtil;
 import com.google.gson.Gson;
 
 import java.io.*;
 import java.net.Socket;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
@@ -30,7 +31,7 @@ public class HTTPResponse {
 
         try {
             out = connection.getOutputStream();
-            writer = new OutputStreamWriter(out);
+            writer = new OutputStreamWriter(out, "utf-8");
             in = connection.getInputStream();
             // sendHeader("text/html", "register success.", 0);
         } catch (IOException ex) {
@@ -78,14 +79,14 @@ public class HTTPResponse {
         String[] s1 = split[0].split("=");
         String[] s2 = split[1].split("=");
         String userId = null, passwd = null;
-        if (s1[0].equals("userId")) {
+            if (s1[0].equals("userId")) {
             userId = URLDecoder.decode(s1[1], "utf-8");
             passwd = URLDecoder.decode(s2[1], "utf-8");
         } else {
             userId = URLDecoder.decode(s2[1], "utf-8");
             passwd = URLDecoder.decode(s1[1], "utf-8");
         }
-        String sql = "select userId from account";//SQL语句
+        String sql = "select userId from Account";//SQL语句
         DBHelper db = new DBHelper(sql);//创建DBHelper对象
         DBHelper insert = null;
         ResultSet ret = null;
@@ -101,11 +102,15 @@ public class HTTPResponse {
                     }
                 }
             }
-            insert = new DBHelper("insert into account (userId, passwd) values(?, ?) ");
+            insert = new DBHelper("insert into Account (userId, passwd, token) values(?, ?, ?) ");
             insert.pst.setString(1, userId);
-            insert.pst.setString(2, SHAUtil.shaEncode(passwd));insert.pst.executeUpdate();
+            passwd = SHAUtil.shaEncode(passwd);
+            insert.pst.setString(2, passwd);
+            String token = SHAUtil.shaEncode(passwd);
+            insert.pst.setString(3, token);
+            insert.pst.executeUpdate();
             sendHeader("text/html");
-            sendRegisterSuccess(userId, passwd);
+            sendRegisterSuccess(userId, token);
             logger.log(Level.INFO, "register success!");
         } catch (SQLException e) {
             sendHeader("text/html");
@@ -124,12 +129,21 @@ public class HTTPResponse {
 
     }
 
-    private void sendRegisterSuccess(String userId, String passwd) throws IOException {
+    private void sendRegisterSuccess(String userId, String token) throws Exception {
         Gson gson = new Gson();
-        HttpRegister register = new HttpRegister();
-        register.setFlag(true);
-        register.setData(new HttpRegister.datas(userId, passwd));
-        String json = gson.toJson(register);
+        Account account = new Account();
+        account.setFlag(true);
+        Account.Data data = new Account.Data();
+        data.setUserId(userId);
+        data.setName(URLEncoder.encode("张三", "utf-8"));
+        data.setSex(1);
+        data.setIcon("/test/images/zhangsan.png");
+        data.setSign(URLEncoder.encode("我的个性签名", "utf-8"));
+        data.setArea(URLEncoder.encode("深圳", "utf-8"));
+        data.setToken(token);
+        account.setData(data);
+        String json = gson.toJson(account);
+        System.out.println(json);
         writer.write("Content-length: " + json.length() + "\r\n\r\n");
         writer.write(json);
         writer.flush();

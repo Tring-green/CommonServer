@@ -1,5 +1,5 @@
 import Domain.HTTPError;
-import Domain.HttpRegister;
+import Domain.Account;
 import com.google.gson.Gson;
 
 /**
@@ -17,10 +17,10 @@ public class TestGson {
         System.out.println(bean.getErrorMessage());
         System.out.println(bean.isFlag());
 
-        HttpRegister register = new HttpRegister();
+        Account register = new Account();
         register.setFlag(true);
-        HttpRegister.datas data = new HttpRegister.datas("12345", "123");
-        register.setData(data);
+        // Account.Data data = new Account.Data("12345", "123");
+        // register.setData(data);
         json = gson.toJson(register);
         System.out.println(json);
         System.out.println(register.isFlag());
