@@ -84,7 +84,6 @@ public class HTTPResponse {
     private void updateAccount() throws IOException, SQLException {
         String userId = mRequest.getValue("userId")[0];
         String token = mRequest.getValue("token")[0];
-        AccountDao dao = new AccountDao();
         String[] result = HttpUtils.splitBody(mRequestbody, new String[]{"name"});
         String name = result[0];
         int update = DBHelper.getInstance().update("update Account set name=? where userId=?", new String[]{name, userId});
